@@ -6,13 +6,9 @@ import { Header } from "@/components/layout/header";
 import { useLiveData, type ImportStatus } from "@/hooks/use-live-data";
 import { apiFetch, apiPost } from "@/lib/api-client";
 
-interface BatteryModule {
-  module_number: number;
-  serial: string;
-  firmware_version: number;
-  capacity: { full: number; design: number };
-  cell_count: number;
-  nominal_voltage: number;
+function getLocal(key: string): string {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem(key) || "";
 }
 
 interface DeviceInfo {
@@ -24,34 +20,15 @@ interface DeviceInfo {
     serial: string;
     status: string;
     last_online: string;
-    last_updated: string;
     commission_date: string;
-    info: {
-      battery_type: string;
-      model: string;
-      max_charge_rate: number;
-      max_discharge_rate: number;
-      battery: {
-        nominal_capacity: number;
-        nominal_voltage: number;
-      };
-    };
-    warranty: {
-      type: string;
-      expiry_date: string;
-    };
-    firmware_version: {
-      ARM: number;
-      DSP: number;
-    };
-    connections: {
-      batteries: BatteryModule[];
-    };
-    flags: string[];
+    info: { model: string; max_charge_rate: number; max_discharge_rate: number; battery_type: string; battery: { nominal_capacity: number; nominal_voltage: number } };
+    warranty: { type: string; expiry_date: string };
+    firmware_version: { ARM: number; DSP: number };
+    connections: { batteries: { module_number: number; serial: string; firmware_version: number; capacity: { full: number; design: number }; cell_count: number; nominal_voltage: number }[] };
   };
 }
 
-function InfoRow({ label, value }: { label: string; value: string | number }) {
+function InfoRow({ label, value }: { label: string; value: string | number | undefined }) {
   return (
     <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
       <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
@@ -65,241 +42,42 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 }
 
-function getLocal(key: string): string {
-  if (typeof window === "undefined") return "";
-  return localStorage.getItem(key) || "";
-}
-
-function SolcastCard() {
-  const [solcastKey, setSolcastKey] = useState(() => getLocal("solcast_api_key"));
-  const [solcastSiteId, setSolcastSiteId] = useState(() => getLocal("solcast_site_id"));
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  const save = async () => {
-    setSaving(true);
-    localStorage.setItem("solcast_api_key", solcastKey);
-    localStorage.setItem("solcast_site_id", solcastSiteId);
-    try {
-      await apiPost("/api/settings/solcast", { apiKey: solcastKey, siteId: solcastSiteId });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    } catch {
-      // Server might not support this endpoint yet — just save locally
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
-    }
-    setSaving(false);
-  };
-
+function SettingsCard({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-6">
-      <h2 className="text-lg font-semibold mb-2">Solar Forecasting</h2>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-        Solcast provides solar generation forecasts. Free tier allows 10 API calls/day.
-        Get your API key from{" "}
-        <a href="https://toolkit.solcast.com.au/" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
-          toolkit.solcast.com.au
-        </a>
-      </p>
-
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400">Solcast API Key</label>
-            <input
-              type="password"
-              value={solcastKey}
-              onChange={(e) => setSolcastKey(e.target.value)}
-              placeholder="Your Solcast API key"
-              className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400">Site ID</label>
-            <input
-              type="text"
-              value={solcastSiteId}
-              onChange={(e) => setSolcastSiteId(e.target.value)}
-              placeholder="e.g. fc7f-0659-4a40-f307"
-              className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
-            />
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={save}
-            disabled={saving}
-            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save"}
-          </button>
-          {saved && <span className="text-xs text-green-500">Saved</span>}
-        </div>
-        <p className="text-xs text-gray-400 dark:text-gray-500">
-          Forecast.Solar is also used as a free complement — no configuration needed.
-        </p>
-      </div>
+      <h2 className="text-lg font-semibold mb-1">{title}</h2>
+      {description && <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">{description}</p>}
+      {!description && <div className="mb-4" />}
+      {children}
     </div>
   );
 }
 
-function ImportCard({ liveImportStatus, commissionDate = "2023-08-04" }: { liveImportStatus: ImportStatus | null; commissionDate?: string }) {
-  const today = new Date().toISOString().split("T")[0];
-  const [fullHistory, setFullHistory] = useState(true);
-  const [fromDate, setFromDate] = useState(commissionDate);
-  const [toDate, setToDate] = useState(today);
-  const [clear, setClear] = useState(false);
-  const [apiKey, setApiKey] = useState(() => getLocal("ge_api_key"));
-  const [inverterSerial, setInverterSerial] = useState(() => getLocal("ge_inverter_serial"));
-  const [starting, setStarting] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
-
-  const status = liveImportStatus;
-  const progress = status?.daysTotal ? Math.round((status.daysCompleted / status.daysTotal) * 100) : 0;
-
-  const startImport = async () => {
-    if (!apiKey || !inverterSerial) {
-      setImportError("GivEnergy API key and Inverter Serial are required");
-      return;
-    }
-    // Persist credentials locally for convenience
-    localStorage.setItem("ge_api_key", apiKey);
-    localStorage.setItem("ge_inverter_serial", inverterSerial);
-
-    setStarting(true);
-    setImportError(null);
-    try {
-      await apiPost("/api/import/start", {
-        fromDate: fullHistory ? commissionDate : fromDate,
-        toDate: fullHistory ? today : toDate,
-        clear,
-        apiKey,
-        inverterSerial,
-      });
-    } catch (err) {
-      setImportError((err as Error).message);
-    }
-    setStarting(false);
-  };
-
+function Field({ label, value, onChange, placeholder, password, readOnly }: {
+  label: string; value: string; onChange?: (v: string) => void; placeholder?: string; password?: boolean; readOnly?: boolean;
+}) {
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-6">
-      <h2 className="text-lg font-semibold mb-2">Data Import</h2>
-      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-        Import historical energy flow data from the GivEnergy Cloud API into the local database.
-      </p>
+    <div>
+      <label className="text-xs text-gray-500 dark:text-gray-400">{label}</label>
+      <input
+        type={password ? "password" : "text"}
+        value={value}
+        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
+        readOnly={readOnly}
+        placeholder={placeholder}
+        className={`w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm ${readOnly ? "opacity-60" : ""}`}
+      />
+    </div>
+  );
+}
 
-      {importError && (
-        <div className="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-xs mb-4">
-          {importError}
-        </div>
-      )}
-
-      {status?.running ? (
-        <div className="space-y-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">
-              Importing {status.currentDate}...
-            </span>
-            <span className="font-medium">
-              {status.daysCompleted} / {status.daysTotal} days
-            </span>
-          </div>
-          <div className="h-3 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-blue-500 transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {status.barsImported.toLocaleString()} records imported
-          </p>
-          {status.error && (
-            <p className="text-xs text-red-500">{status.error}</p>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {status && !status.running && status.daysCompleted > 0 && (
-            <div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs mb-2">
-              Last import: {status.barsImported.toLocaleString()} records across {status.daysCompleted} days
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400">GivEnergy API Key</label>
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Bearer token from givenergy.cloud"
-                className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400">Inverter Serial</label>
-              <input
-                type="text"
-                value={inverterSerial}
-                onChange={(e) => setInverterSerial(e.target.value)}
-                placeholder="e.g. FD2321G788"
-                className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
-              />
-            </div>
-          </div>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={fullHistory}
-              onChange={(e) => setFullHistory(e.target.checked)}
-              className="rounded"
-            />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Full history (since commission {commissionDate})
-            </span>
-          </label>
-          {!fullHistory && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">From</label>
-                <input
-                  type="date"
-                  value={fromDate}
-                  onChange={(e) => setFromDate(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-xs text-gray-500 dark:text-gray-400">To</label>
-                <input
-                  type="date"
-                  value={toDate}
-                  max={today}
-                  onChange={(e) => setToDate(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
-                />
-              </div>
-            </div>
-          )}
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={clear}
-              onChange={(e) => setClear(e.target.checked)}
-              className="rounded"
-            />
-            <span className="text-sm text-gray-600 dark:text-gray-400">Clear existing data before import</span>
-          </label>
-          <button
-            onClick={startImport}
-            disabled={starting}
-            className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50"
-          >
-            {starting ? "Starting..." : "Start Import"}
-          </button>
-        </div>
-      )}
+function SaveButton({ onClick, saving, saved }: { onClick: () => void; saving: boolean; saved: boolean }) {
+  return (
+    <div className="flex items-center gap-3 mt-3">
+      <button onClick={onClick} disabled={saving} className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50">
+        {saving ? "Saving..." : "Save"}
+      </button>
+      {saved && <span className="text-xs text-green-500">Saved</span>}
     </div>
   );
 }
@@ -307,20 +85,65 @@ function ImportCard({ liveImportStatus, commissionDate = "2023-08-04" }: { liveI
 export default function SettingsPage() {
   const { connected, importStatus } = useLiveData();
   const [info, setInfo] = useState<DeviceInfo | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [settings, setSettings] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [saved, setSaved] = useState<Record<string, boolean>>({});
+
+  // Editable fields
+  const [dongleSerial, setDongleSerial] = useState("");
+  const [inverterHost, setInverterHost] = useState("");
+  const [geApiKey, setGeApiKey] = useState("");
+  const [geInverterSerial, setGeInverterSerial] = useState("");
+  const [solcastApiKey, setSolcastApiKey] = useState("");
+  const [solcastSiteId, setSolcastSiteId] = useState("");
+
+  // Import fields
+  const [importFrom, setImportFrom] = useState("");
+  const [importTo, setImportTo] = useState(() => new Date().toISOString().split("T")[0]);
+  const [importFull, setImportFull] = useState(true);
+  const [importClear, setImportClear] = useState(false);
 
   useEffect(() => {
-    apiFetch<DeviceInfo>("/api/system/info")
-      .then(setInfo)
-      .catch((err) => setError((err as Error).message));
+    apiFetch<DeviceInfo>("/api/system/info").then(setInfo).catch(() => {});
+    apiFetch<Record<string, string>>("/api/settings").then((s) => {
+      setSettings(s);
+      setDongleSerial(s.dongle_serial || "");
+      setInverterHost(s.inverter_host || "");
+      setGeInverterSerial(s.givenergy_inverter_serial || "");
+      setSolcastSiteId(s.solcast_site_id || "");
+      if (s.givenergy_api_key) setGeApiKey(s.givenergy_api_key); // masked
+      if (s.solcast_api_key) setSolcastApiKey(s.solcast_api_key); // masked
+    }).catch(() => {});
   }, []);
 
+  const commissionDate = info?.inverter?.commission_date?.split("T")[0] || "2023-01-01";
   const inv = info?.inverter;
-  const batteries = inv?.connections?.batteries || [];
-  const totalCapacityKwh = batteries.reduce(
-    (sum, b) => sum + (b.capacity.full * b.nominal_voltage) / 1000,
-    0,
-  );
+
+  const saveSection = async (section: string, data: Record<string, string>) => {
+    setSaving((s) => ({ ...s, [section]: true }));
+    try {
+      await apiPost("/api/settings", data);
+      setSaved((s) => ({ ...s, [section]: true }));
+      setTimeout(() => setSaved((s) => ({ ...s, [section]: false })), 3000);
+    } catch {}
+    setSaving((s) => ({ ...s, [section]: false }));
+  };
+
+  const startImport = async () => {
+    setSaving((s) => ({ ...s, import: true }));
+    try {
+      const from = importFull ? commissionDate : importFrom;
+      const to = importFull ? new Date().toISOString().split("T")[0] : importTo;
+      await apiPost("/api/import/start", {
+        fromDate: from, toDate: to, clear: importClear,
+        apiKey: geApiKey.startsWith("••••") ? undefined : geApiKey,
+        inverterSerial: geInverterSerial,
+      });
+    } catch {}
+    setSaving((s) => ({ ...s, import: false }));
+  };
+
+  const importProgress = importStatus?.daysTotal ? Math.round((importStatus.daysCompleted / importStatus.daysTotal) * 100) : 0;
 
   return (
     <div className="flex h-screen">
@@ -331,93 +154,141 @@ export default function SettingsPage() {
           <div className="max-w-2xl mx-auto space-y-6">
             <h1 className="text-2xl font-bold">Settings</h1>
 
-            {error && (
-              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm">
-                {error}
+            {/* Inverter Connection */}
+            <SettingsCard title="Inverter Connection" description="Connect to your GivEnergy inverter via Modbus TCP on the local network.">
+              <div className="space-y-3">
+                <Field label="Dongle Serial" value={dongleSerial} onChange={setDongleSerial} placeholder="e.g. WH1234G567" />
+                <Field label="Inverter IP Address" value={inverterHost} onChange={setInverterHost} placeholder="e.g. 192.168.1.100" />
+                <SaveButton
+                  onClick={() => saveSection("inverter", { dongle_serial: dongleSerial, inverter_host: inverterHost })}
+                  saving={!!saving.inverter} saved={!!saved.inverter}
+                />
               </div>
-            )}
+            </SettingsCard>
 
-            {/* Inverter */}
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-6">
-              <h2 className="text-lg font-semibold mb-4">Inverter</h2>
-              {inv ? (
-                <>
-                  <InfoRow label="Model" value={inv.info.model} />
-                  <InfoRow label="Serial Number" value={inv.serial} />
-                  <InfoRow label="Status" value={inv.status} />
-                  <InfoRow label="Firmware (ARM)" value={`D0.${inv.firmware_version.ARM}`} />
-                  <InfoRow label="Firmware (DSP)" value={`A0.${inv.firmware_version.DSP}`} />
-                  <InfoRow label="Max Charge Rate" value={`${inv.info.max_charge_rate} W`} />
-                  <InfoRow label="Max Discharge Rate" value={`${inv.info.max_discharge_rate} W`} />
-                  <InfoRow label="Commission Date" value={formatDate(inv.commission_date)} />
-                  <InfoRow label="Last Online" value={new Date(inv.last_online).toLocaleString("en-GB")} />
-                </>
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Loading...</p>
-              )}
-            </div>
-
-            {/* Battery */}
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-6">
-              <h2 className="text-lg font-semibold mb-4">Battery</h2>
-              {inv ? (
-                <>
-                  <InfoRow label="Type" value={inv.info.battery_type} />
-                  <InfoRow label="Packs" value={batteries.length} />
-                  <InfoRow label="Total Capacity" value={`${totalCapacityKwh.toFixed(1)} kWh`} />
-                  <InfoRow label="Nominal Voltage" value={`${inv.info.battery?.nominal_voltage || 0} V`} />
-
-                  {batteries.map((bat) => (
-                    <div key={bat.serial} className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
-                      <p className="text-xs text-blue-500 font-medium mb-2">Pack {bat.module_number}: {bat.serial}</p>
-                      <InfoRow label="Firmware" value={bat.firmware_version} />
-                      <InfoRow label="Full Capacity" value={`${bat.capacity.full} Ah`} />
-                      <InfoRow label="Design Capacity" value={`${bat.capacity.design} Ah`} />
-                      <InfoRow label="Health" value={`${Math.round((bat.capacity.full / bat.capacity.design) * 100)}%`} />
-                      <InfoRow label="Cells" value={bat.cell_count} />
-                    </div>
-                  ))}
-                </>
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Loading...</p>
-              )}
-            </div>
-
-            {/* Warranty & Dongle */}
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-6">
-              <h2 className="text-lg font-semibold mb-4">Warranty & Connection</h2>
-              {info ? (
-                <>
-                  <InfoRow label="Warranty Type" value={inv?.warranty?.type || "—"} />
-                  <InfoRow label="Warranty Expiry" value={formatDate(inv?.warranty?.expiry_date || "")} />
-                  <InfoRow label="Dongle Serial" value={info.serial_number} />
-                  <InfoRow label="Dongle Type" value={info.type} />
-                  <InfoRow label="Dongle Firmware" value={info.firmware_version} />
-                </>
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Loading...</p>
-              )}
-            </div>
-
-            {/* Data Import */}
-            <ImportCard
-              liveImportStatus={importStatus}
-              commissionDate={inv?.commission_date ? inv.commission_date.split("T")[0] : undefined}
-            />
+            {/* GivEnergy Cloud API */}
+            <SettingsCard title="GivEnergy Cloud" description="Enable historical energy data, system info, and remote control via the GivEnergy cloud API.">
+              <div className="space-y-3">
+                <Field label="API Key" value={geApiKey} onChange={setGeApiKey} placeholder="Bearer token from givenergy.cloud" password />
+                <Field label="Inverter Serial" value={geInverterSerial} onChange={setGeInverterSerial} placeholder="e.g. FD1234G567" />
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Get your API key from <a href="https://givenergy.cloud" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">givenergy.cloud</a> → API Tokens
+                </p>
+                <SaveButton
+                  onClick={() => saveSection("givenergy", {
+                    givenergy_api_key: geApiKey.startsWith("••••") ? "" : geApiKey,
+                    givenergy_inverter_serial: geInverterSerial,
+                  })}
+                  saving={!!saving.givenergy} saved={!!saved.givenergy}
+                />
+              </div>
+            </SettingsCard>
 
             {/* Solar Forecasting */}
-            <SolcastCard />
+            <SettingsCard title="Solar Forecasting" description="Solcast provides solar generation forecasts. Panel location is auto-detected from your Solcast site.">
+              <div className="space-y-3">
+                <Field label="Solcast API Key" value={solcastApiKey} onChange={setSolcastApiKey} placeholder="Your Solcast API key" password />
+                <Field label="Site ID" value={solcastSiteId} onChange={setSolcastSiteId} placeholder="e.g. abcd-1234-ef56-7890" />
+                {settings.forecast_latitude && (
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    <Field label="Latitude" value={settings.forecast_latitude || ""} readOnly />
+                    <Field label="Longitude" value={settings.forecast_longitude || ""} readOnly />
+                    <Field label="Tilt" value={settings.forecast_tilt ? `${settings.forecast_tilt}°` : ""} readOnly />
+                    <Field label="Azimuth" value={settings.forecast_azimuth ? `${settings.forecast_azimuth}°` : ""} readOnly />
+                  </div>
+                )}
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Free tier: 10 API calls/day. Get your key from <a href="https://toolkit.solcast.com.au" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">toolkit.solcast.com.au</a>.
+                  Forecast.Solar also runs automatically — no config needed.
+                </p>
+                <SaveButton
+                  onClick={() => saveSection("solcast", {
+                    solcast_api_key: solcastApiKey.startsWith("••••") ? "" : solcastApiKey,
+                    solcast_site_id: solcastSiteId,
+                  })}
+                  saving={!!saving.solcast} saved={!!saved.solcast}
+                />
+              </div>
+            </SettingsCard>
+
+            {/* Data Import */}
+            <SettingsCard title="Data Import" description="Import historical energy flow data from the GivEnergy Cloud API into the local database.">
+              {importStatus?.running ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">Importing {importStatus.currentDate}...</span>
+                    <span className="font-medium">{importStatus.daysCompleted} / {importStatus.daysTotal} days</span>
+                  </div>
+                  <div className="h-3 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                    <div className="h-full rounded-full bg-blue-500 transition-all duration-500" style={{ width: `${importProgress}%` }} />
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{importStatus.barsImported.toLocaleString()} records imported</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {importStatus && !importStatus.running && importStatus.daysCompleted > 0 && (
+                    <div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs">
+                      Last import: {importStatus.barsImported.toLocaleString()} records across {importStatus.daysCompleted} days
+                    </div>
+                  )}
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={importFull} onChange={(e) => setImportFull(e.target.checked)} className="rounded" />
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Full history (since commission {commissionDate})</span>
+                  </label>
+                  {!importFull && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-gray-500 dark:text-gray-400">From</label>
+                        <input type="date" value={importFrom} onChange={(e) => setImportFrom(e.target.value)}
+                          className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-gray-500 dark:text-gray-400">To</label>
+                        <input type="date" value={importTo} onChange={(e) => setImportTo(e.target.value)}
+                          className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm" />
+                      </div>
+                    </div>
+                  )}
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={importClear} onChange={(e) => setImportClear(e.target.checked)} className="rounded" />
+                    <span className="text-sm text-gray-600 dark:text-gray-400">Clear existing data before import</span>
+                  </label>
+                  <button onClick={startImport} disabled={!!saving.import}
+                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50">
+                    {saving.import ? "Starting..." : "Start Import"}
+                  </button>
+                </div>
+              )}
+            </SettingsCard>
+
+            {/* System Info */}
+            {inv && (
+              <SettingsCard title="System Info">
+                <InfoRow label="Model" value={inv.info?.model} />
+                <InfoRow label="Serial" value={inv.serial} />
+                <InfoRow label="Status" value={inv.status} />
+                <InfoRow label="Firmware" value={`D0.${inv.firmware_version?.ARM} / A0.${inv.firmware_version?.DSP}`} />
+                <InfoRow label="Max Charge Rate" value={`${inv.info?.max_charge_rate} W`} />
+                <InfoRow label="Battery Type" value={inv.info?.battery_type} />
+                <InfoRow label="Batteries" value={inv.connections?.batteries?.length} />
+                <InfoRow label="Commission Date" value={formatDate(inv.commission_date)} />
+                {info && (
+                  <>
+                    <InfoRow label="Warranty" value={`${inv.warranty?.type} — expires ${formatDate(inv.warranty?.expiry_date || "")}`} />
+                    <InfoRow label="Dongle" value={`${info.serial_number} (${info.type})`} />
+                  </>
+                )}
+              </SettingsCard>
+            )}
 
             {/* About */}
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-6">
-              <h2 className="text-lg font-semibold mb-4">About</h2>
+            <SettingsCard title="About">
               <InfoRow label="Version" value="0.1.0" />
               <InfoRow label="Project" value="GivSelf" />
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">
-                Self-hosted home energy management system. Replaces cloud-dependent portals with
-                direct local communication to your inverter.
+                Self-hosted home energy management system. Replaces cloud-dependent portals with direct local communication to your inverter.
               </p>
-            </div>
+            </SettingsCard>
           </div>
         </main>
       </div>

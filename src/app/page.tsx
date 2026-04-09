@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useLiveData } from "@/hooks/use-live-data";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
@@ -9,11 +10,22 @@ import { PowerBar } from "@/components/dashboard/power-bar";
 import { EnergySummary } from "@/components/dashboard/energy-summary";
 import { BoostControls } from "@/components/dashboard/boost-controls";
 import { StatusBanner } from "@/components/dashboard/status-banner";
+import { QuickstartWizard } from "@/components/setup/QuickstartWizard";
+import { apiFetch } from "@/lib/api-client";
 
 export default function DashboardPage() {
   const { power, energy, boostState, connected } = useLiveData();
+  const [showSetup, setShowSetup] = useState(false);
+
+  useEffect(() => {
+    apiFetch<{ required: boolean }>("/api/settings/setup-required")
+      .then(({ required }) => setShowSetup(required))
+      .catch(() => {}); // server not available — don't show wizard
+  }, []);
 
   return (
+    <>
+      {showSetup && <QuickstartWizard onComplete={() => { setShowSetup(false); window.location.reload(); }} />}
     <div className="flex h-screen">
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -66,5 +78,6 @@ export default function DashboardPage() {
         </main>
       </div>
     </div>
+    </>
   );
 }
