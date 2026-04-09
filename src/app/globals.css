@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --chart-axis: #6B7280;
+  --chart-grid: #E5E7EB;
+  --tooltip-bg: rgba(255, 255, 255, 0.95);
+  --tooltip-border: #E5E7EB;
+  --tooltip-text: #171717;
+}
+
+.dark {
+  --background: #0F172A;
+  --foreground: #F8FAFC;
+  --chart-axis: #9CA3AF;
+  --chart-grid: #374151;
+  --tooltip-bg: rgba(17, 24, 39, 0.95);
+  --tooltip-border: #374151;
+  --tooltip-text: #F8FAFC;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
