@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# GivSelf Web
 
-## Getting Started
+Next.js dashboard for the GivSelf home energy management system.
 
-First, run the development server:
+![Analytics](https://givself.github.io/images/analytics.png)
+
+<p align="center">
+  <img src="https://givself.github.io/images/dashboard-mobile.png" alt="Mobile Dashboard" width="200">
+  <img src="https://givself.github.io/images/analytics-mobile.png" alt="Mobile Analytics" width="200">
+</p>
+
+## Features
+
+- **Live Dashboard** — Animated power flow, status banner, SOC gauge, power bars, boost controls
+- **Analytics** — Stacked bar charts from GivEnergy Cloud API with solar forecast overlay
+- **Schedules** — Battery mode selector, 10 charge/discharge slots, SOC limits
+- **Settings** — Inverter connection, cloud API, solar forecasting, data import
+- **Setup Wizard** — First-run quickstart for new deployments
+- **Dark/Light Theme** — Toggle with CSS custom properties
+- **Mobile Responsive** — Bottom tab bar navigation on small screens
+
+## Quick Start
 
 ```bash
+# With Docker (recommended)
+docker pull ghcr.io/givself/web:latest
+
+# Local development
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Documentation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+See [givself.github.io](https://givself.github.io) for full documentation.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## License
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
