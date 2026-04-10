@@ -19,15 +19,46 @@ Next.js dashboard for the GivSelf home energy management system.
 - **Dark/Light Theme** — Toggle with CSS custom properties
 - **Mobile Responsive** — Bottom tab bar navigation on small screens
 
-## Quick Start
+## Deployment
+
+### Docker (recommended)
 
 ```bash
-# With Docker (recommended)
 docker pull ghcr.io/givself/web:latest
+```
 
-# Local development
+See the [deploy repo](https://github.com/GivSelf/deploy) for the full docker-compose.yml.
+
+### Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `HOSTNAME` | No | `localhost` | Listen address. Set to `0.0.0.0` for Docker/LAN access |
+| `API_URL` | **Yes** (Docker) | `http://localhost:3002` | Internal URL to the GivSelf server. In Docker, use the service name (e.g. `http://server:3032`) |
+| `WS_URL` | No | — | External WebSocket URL for browser connections. Set to `ws://your-server-ip:port` if server is exposed |
+
+The web container proxies all `/api/*` requests to the server internally via `API_URL`, so only the web port needs to be exposed to users.
+
+### Minimal Docker Compose
+
+```yaml
+web:
+  image: ghcr.io/givself/web:latest
+  ports:
+    - "3033:3000"
+  environment:
+    HOSTNAME: "0.0.0.0"
+    API_URL: "http://server:3032"
+```
+
+## Local Development
+
+```bash
 npm install
 npm run dev
+
+# Access at http://localhost:3000
+# Expects server running at http://localhost:3002
 ```
 
 ## Documentation
