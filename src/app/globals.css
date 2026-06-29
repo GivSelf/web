@@ -34,3 +34,306 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* ============================================================
+   GivSelf dashboard theme — Hearth / Aurora / Meadow
+   Token values are authored in oklch (see design handoff).
+   --font-* custom properties are provided by next/font in layout.tsx.
+   ============================================================ */
+[data-theme="hearth"] {
+  --font: var(--font-hanken), sans-serif;
+  --bg: oklch(0.95 0.014 80);
+  --card: oklch(0.995 0.006 85);
+  --text: oklch(0.30 0.02 60);
+  --muted: oklch(0.54 0.018 60);
+  --label: oklch(0.58 0.02 60);
+  --border: oklch(0.89 0.012 78);
+  --solar: oklch(0.74 0.15 62);
+  --green: oklch(0.64 0.13 150);
+  --gridc: oklch(0.6 0.07 250);
+  --ring-track: oklch(0.91 0.012 80);
+  --radius: 24px;
+  --tileradius: 20px;
+  --shadow: 0 2px 4px rgba(70, 45, 10, .05), 0 10px 30px rgba(70, 45, 10, .07);
+}
+[data-theme="aurora"] {
+  --font: var(--font-space), sans-serif;
+  --bg: oklch(0.165 0.012 60);
+  --card: oklch(0.215 0.014 62);
+  --text: oklch(0.94 0.008 75);
+  --muted: oklch(0.62 0.012 70);
+  --label: oklch(0.64 0.012 70);
+  --border: oklch(0.30 0.014 62);
+  --solar: oklch(0.82 0.14 75);
+  --green: oklch(0.79 0.12 160);
+  --gridc: oklch(0.76 0.1 220);
+  --ring-track: oklch(0.30 0.014 62);
+  --radius: 22px;
+  --tileradius: 18px;
+  --shadow: 0 14px 44px rgba(0, 0, 0, .4);
+}
+[data-theme="meadow"] {
+  --font: var(--font-bricolage), sans-serif;
+  --bg: oklch(0.94 0.022 135);
+  --card: oklch(0.985 0.014 115);
+  --text: oklch(0.29 0.035 150);
+  --muted: oklch(0.48 0.03 150);
+  --label: oklch(0.5 0.03 150);
+  --border: oklch(0.86 0.02 135);
+  --solar: oklch(0.74 0.13 85);
+  --green: oklch(0.56 0.14 150);
+  --gridc: oklch(0.55 0.08 230);
+  --ring-track: oklch(0.89 0.02 135);
+  --radius: 18px;
+  --tileradius: 16px;
+  --shadow: 0 2px 4px rgba(30, 55, 30, .05), 0 10px 28px rgba(30, 55, 30, .09);
+}
+
+/* Map recharts chrome vars to the active theme (overrides :root/.dark above) */
+[data-theme] {
+  --chart-axis: var(--muted);
+  --chart-grid: var(--border);
+  --tooltip-bg: var(--card);
+  --tooltip-border: var(--border);
+  --tooltip-text: var(--text);
+}
+
+/* Full-bleed page background for the themed dashboard route */
+.dashroot {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* --- Dashboard component styles (scoped under .app) --- */
+.app {
+  width: 100%;
+  max-width: 1200px;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  padding: 26px;
+  border-radius: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  -webkit-font-smoothing: antialiased;
+}
+.app .pmono,
+.app .cmeta,
+.app .axislbl { font-family: var(--font-jetbrains), monospace; }
+.app .num { font-variant-numeric: tabular-nums; }
+
+.app .topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.app .brand { display: flex; align-items: center; gap: 11px; font-weight: 800; font-size: 21px; letter-spacing: -.02em; }
+.app .sunmark { width: 30px; height: 30px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, oklch(0.88 0.13 85), var(--solar)); box-shadow: 0 0 0 4px color-mix(in oklch, var(--solar) 16%, transparent); flex-shrink: 0; }
+.app .nav { display: flex; align-items: center; gap: 4px; }
+.app .navi { padding: 8px 15px; border-radius: 999px; color: var(--muted); font-weight: 600; font-size: 14px; text-decoration: none; cursor: pointer; transition: background .15s, color .15s; }
+.app .navi:hover { background: color-mix(in oklch, var(--text) 5%, transparent); }
+.app .navi.active { background: color-mix(in oklch, var(--text) 8%, transparent); color: var(--text); }
+.app .tools { display: flex; align-items: center; gap: 10px; }
+.app .pill { display: flex; align-items: center; gap: 8px; padding: 8px 13px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); font-size: 13px; font-weight: 600; color: var(--text); }
+.app .livedot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px color-mix(in oklch, var(--green) 22%, transparent); animation: pulse 2.2s ease-in-out infinite; }
+.app .livedot.off { background: var(--muted); box-shadow: 0 0 0 4px color-mix(in oklch, var(--muted) 18%, transparent); animation: none; }
+.app .avatar { width: 36px; height: 36px; border-radius: 50%; background: radial-gradient(circle at 30% 25%, color-mix(in oklch, var(--solar) 55%, var(--card)), color-mix(in oklch, var(--green) 45%, var(--card))); border: 1px solid var(--border); }
+
+.app .hero { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+.app .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; }
+.app .chead { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.app .ctitle { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--label); }
+.app .cmeta { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+.app .cright { text-align: right; }
+.app .cbig { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+.app .csub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+.app .flowstage { position: relative; width: 100%; margin-top: 10px; }
+.app .flowsvg { display: block; width: 100%; height: auto; overflow: visible; }
+.app .flowbase { fill: none; stroke: var(--border); stroke-width: 3; }
+.app .flowline { fill: none; stroke: var(--solar); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1.5 8; animation: march 1s linear infinite; }
+.app .flowline.bat { stroke: var(--green); }
+.app .flowline.grd { stroke: var(--gridc); }
+.app .flowline.rev { animation-direction: reverse; }
+.app .flowline.idle { animation: none; opacity: 0; }
+.app .node { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 7px; width: 100px; }
+.app .ndot { width: 64px; height: 64px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; border: 1px solid color-mix(in oklch, var(--text) 9%, transparent); }
+.app .ndsolar { background: color-mix(in oklch, var(--solar) 20%, var(--card)); color: var(--solar); }
+.app .ndhome { background: color-mix(in oklch, var(--text) 7%, var(--card)); border-radius: 50%; }
+.app .ndbatt { background: color-mix(in oklch, var(--green) 20%, var(--card)); color: var(--green); }
+.app .ndgrid { background: color-mix(in oklch, var(--gridc) 17%, var(--card)); color: var(--gridc); }
+.app .nlabel { font-size: 12.5px; font-weight: 700; }
+.app .nsub { font-size: 11px; color: var(--muted); margin-top: -4px; }
+.app .flowfoot { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 16px; border-top: 1px dashed var(--border); }
+.app .ffl { font-size: 13px; color: var(--muted); font-weight: 600; }
+.app .ffb { font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+.app .ffg { color: var(--green); }
+
+.app .battwrap { display: flex; flex-direction: column; align-items: center; margin-top: 6px; }
+.app .ringbox { position: relative; width: 196px; height: 196px; }
+.app .ringsvg { transform: rotate(-90deg); display: block; }
+.app .ringtrack { fill: none; stroke: var(--ring-track); stroke-width: 15; }
+.app .ringval { fill: none; stroke: var(--solar); stroke-width: 15; stroke-linecap: round; transition: stroke-dasharray .6s ease; }
+.app .ringctr { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.app .ringpct { font-size: 48px; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.app .pctsign { font-size: 22px; font-weight: 700; }
+.app .ringsub { font-size: 12px; color: var(--muted); font-weight: 700; margin-top: 4px; letter-spacing: .03em; }
+.app .battrows { width: 100%; margin-top: 14px; display: flex; flex-direction: column; }
+.app .brow { display: flex; align-items: center; justify-content: space-between; padding: 10px 2px; font-size: 13.5px; border-top: 1px solid var(--border); }
+.app .bk { color: var(--muted); }
+.app .bv { font-weight: 700; }
+.app .bv.green { color: var(--green); }
+
+.app .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.app .tile { background: var(--card); border: 1px solid var(--border); border-radius: var(--tileradius); box-shadow: var(--shadow); padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.app .thead { display: flex; align-items: center; justify-content: space-between; }
+.app .tdot { width: 30px; height: 30px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+.app .tdoti { width: 13px; height: 13px; border-radius: 4px; }
+.app .tsolar .tdot { background: color-mix(in oklch, var(--solar) 18%, var(--card)); }
+.app .tsolar .tdoti { background: var(--solar); }
+.app .thome .tdot { background: color-mix(in oklch, var(--text) 8%, var(--card)); }
+.app .thome .tdoti { background: var(--text); border-radius: 50%; }
+.app .texp .tdot { background: color-mix(in oklch, var(--green) 18%, var(--card)); }
+.app .texp .tdoti { background: var(--green); }
+.app .timp .tdot { background: color-mix(in oklch, var(--gridc) 16%, var(--card)); }
+.app .timp .tdoti { background: var(--gridc); border-radius: 50%; }
+.app .tdelta { font-size: 11.5px; font-weight: 700; color: var(--green); }
+.app .tdelta.dn { color: var(--muted); }
+.app .tlabel { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.app .tnum { font-size: 30px; font-weight: 800; letter-spacing: -.02em; }
+.app .tunit { font-size: 14px; font-weight: 600; color: var(--muted); margin-left: 3px; }
+
+.app .fcrow { display: grid; grid-template-columns: 1.5fr 1fr; gap: 20px; }
+.app .chart { display: block; width: 100%; height: auto; margin-top: 10px; }
+.app .axislbl { fill: var(--muted); font-size: 11px; }
+.app .gridln { stroke: var(--border); stroke-width: 1; }
+.app .fcfill { fill: var(--solar); opacity: .11; }
+.app .fcline { fill: none; stroke: var(--solar); stroke-width: 2; stroke-dasharray: 5 5; opacity: .55; }
+.app .actfill { fill: var(--solar); opacity: .24; }
+.app .actline { fill: none; stroke: var(--solar); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.app .nowln { stroke: var(--text); stroke-width: 1.5; stroke-dasharray: 3 4; opacity: .45; }
+.app .nowdot { fill: var(--solar); stroke: var(--card); stroke-width: 3.5; }
+.app .legend { display: flex; align-items: center; gap: 18px; margin-top: 12px; font-size: 12.5px; color: var(--muted); font-weight: 600; flex-wrap: wrap; }
+.app .lgi { display: flex; align-items: center; gap: 7px; }
+.app .lgsw { width: 16px; height: 9px; border-radius: 3px; background: var(--solar); }
+.app .lgsw.fc { opacity: .4; }
+
+.app .ctrls { display: flex; flex-direction: column; gap: 18px; margin-top: 6px; }
+.app .sublbl { font-size: 12px; color: var(--label); font-weight: 700; letter-spacing: .04em; margin-bottom: 9px; text-transform: uppercase; }
+.app .seg { display: flex; background: color-mix(in oklch, var(--text) 6%, transparent); border-radius: 14px; padding: 4px; gap: 4px; }
+.app .segb { flex: 1; text-align: center; padding: 10px 6px; border-radius: 10px; font-size: 12.5px; font-weight: 600; color: var(--muted); background: none; border: none; cursor: pointer; font-family: inherit; }
+.app .segb.active { background: var(--card); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .14); }
+.app .boosts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.app .boostb { padding: 15px; border-radius: 14px; border: 1px solid var(--border); background: color-mix(in oklch, var(--solar) 9%, var(--card)); display: flex; flex-direction: column; gap: 4px; cursor: pointer; text-align: left; font-family: inherit; color: var(--text); transition: filter .15s; }
+.app .boostb:hover { filter: brightness(0.98); }
+.app .boostb:disabled { opacity: .55; cursor: default; }
+.app .boostb.green { background: color-mix(in oklch, var(--green) 10%, var(--card)); }
+.app .boostb.on { outline: 2px solid var(--solar); }
+.app .boostb.green.on { outline: 2px solid var(--green); }
+.app .boostb .bt { font-weight: 700; font-size: 14.5px; }
+.app .boostb .bs { font-size: 11.5px; color: var(--muted); }
+.app .resv { display: flex; align-items: center; gap: 14px; }
+.app .resvk { font-size: 13.5px; color: var(--muted); white-space: nowrap; }
+.app .resvv { font-size: 13.5px; font-weight: 700; white-space: nowrap; }
+.app .slider { flex: 1; -webkit-appearance: none; appearance: none; height: 8px; border-radius: 999px; background: var(--ring-track); outline: none; cursor: pointer; }
+.app .slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--card); border: 3px solid var(--green); cursor: pointer; }
+.app .slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: var(--card); border: 3px solid var(--green); cursor: pointer; }
+
+/* Theme switcher popover */
+.app .themesw { position: relative; }
+.app .swbtn { display: flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); cursor: pointer; }
+.app .swdot { width: 14px; height: 14px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, var(--solar), var(--green)); }
+.app .swmenu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; background: var(--card); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 6px; display: flex; flex-direction: column; gap: 2px; min-width: 150px; }
+.app .switem { display: flex; align-items: center; gap: 9px; padding: 9px 11px; border-radius: 10px; font-size: 13px; font-weight: 600; color: var(--text); background: none; border: none; cursor: pointer; font-family: inherit; }
+.app .switem:hover { background: color-mix(in oklch, var(--text) 6%, transparent); }
+.app .switem.active { background: color-mix(in oklch, var(--text) 9%, transparent); }
+.app .swsw { width: 16px; height: 16px; border-radius: 5px; border: 1px solid var(--border); }
+
+@media (max-width: 900px) {
+  .app .hero, .app .fcrow { grid-template-columns: 1fr; }
+  .app .stats { grid-template-columns: repeat(2, 1fr); }
+  .app .nav { order: 3; width: 100%; justify-content: center; flex-wrap: wrap; }
+}
+
+/* --- Shared themed primitives for the inner pages (Analytics/Schedule/Settings) --- */
+.app .h1 { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+.app .cardh { font-size: 15px; font-weight: 700; letter-spacing: -.01em; margin-bottom: 4px; }
+.app .muted { color: var(--muted); }
+.app .subtle { color: var(--muted); font-size: 12px; }
+.app .label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.app .link { color: var(--gridc); text-decoration: none; }
+.app .link:hover { text-decoration: underline; }
+.app .linkbtn { background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; font-size: 13px; color: var(--gridc); }
+.app .linkbtn:hover { text-decoration: underline; }
+.app .divider { border-top: 1px solid var(--border); }
+.app .swatch { width: 11px; height: 11px; border-radius: 3px; display: inline-block; flex-shrink: 0; }
+.app .srow { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; padding: 5px 0; }
+
+.app .tinput {
+  padding: 9px 12px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text); font-size: 13px; font-family: inherit;
+}
+.app .tinput.full { width: 100%; }
+.app .tinput:focus { outline: 2px solid color-mix(in oklch, var(--gridc) 45%, transparent); outline-offset: 1px; }
+.app .tinput[readonly] { opacity: .6; }
+.app input[type="checkbox"], .app input[type="range"] { accent-color: var(--green); }
+
+.app .tbtn {
+  padding: 9px 15px; border-radius: 10px; border: 1px solid var(--border); background: var(--card);
+  color: var(--text); font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit;
+  transition: background .15s, filter .15s; white-space: nowrap;
+}
+.app .tbtn:hover { background: color-mix(in oklch, var(--text) 5%, var(--card)); }
+.app .tbtn:disabled { opacity: .55; cursor: default; }
+.app .tbtn.sm { padding: 7px 11px; font-size: 12px; }
+.app .tbtn.accent { background: var(--green); border-color: transparent; color: oklch(0.99 0.01 150); }
+.app .tbtn.accent:hover { filter: brightness(1.05); background: var(--green); }
+
+.app .iconbtn {
+  display: inline-flex; align-items: center; justify-content: center; padding: 8px; border-radius: 10px;
+  border: 1px solid transparent; background: none; color: var(--muted); cursor: pointer;
+}
+.app .iconbtn:hover { background: color-mix(in oklch, var(--text) 6%, transparent); color: var(--text); }
+
+.app .progress { height: 12px; border-radius: 999px; background: var(--ring-track); overflow: hidden; }
+.app .progress > span { display: block; height: 100%; background: var(--green); transition: width .5s ease; }
+
+.app .note { padding: 9px 12px; border-radius: 10px; font-size: 12.5px; }
+.app .note.ok { background: color-mix(in oklch, var(--green) 14%, var(--card)); color: var(--green); }
+.app .note.err { background: color-mix(in oklch, oklch(0.62 0.2 25) 14%, var(--card)); color: oklch(0.62 0.2 25); }
+
+.app .charttip {
+  border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text);
+  padding: 10px 12px; box-shadow: var(--shadow); font-size: 12.5px;
+}
+.app .toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.app .grow { flex: 1; }
+
+@media (max-width: 900px) {
+  .app .anlgrid { grid-template-columns: 1fr !important; }
+}
+
+/* First-run wizard modal — rendered outside .app, themed via the html-level vars */
+.wiz-overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, .6); backdrop-filter: blur(4px); }
+.wiz-card { width: 100%; max-width: 32rem; margin: 0 16px; border-radius: 20px; border: 1px solid var(--border); background: var(--card); color: var(--text); box-shadow: var(--shadow); overflow: hidden; font-family: var(--font); }
+.wiz-h1 { font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+.wiz-h2 { font-size: 16px; font-weight: 700; }
+.wiz-step { height: 4px; flex: 1; border-radius: 999px; background: var(--ring-track); }
+.wiz-step.on { background: var(--green); }
+.wiz-label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.wiz-input { width: 100%; margin-top: 4px; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 13px; font-family: inherit; }
+.wiz-input:focus { outline: 2px solid color-mix(in oklch, var(--gridc) 45%, transparent); outline-offset: 1px; }
+.wiz-link { color: var(--gridc); }
+.wiz-btn { padding: 9px 18px; border-radius: 10px; background: var(--green); color: oklch(0.99 0.01 150); border: none; font-weight: 600; font-size: 13px; cursor: pointer; font-family: inherit; }
+.wiz-btn:disabled { opacity: .55; cursor: default; }
+.wiz-skip { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; font-family: inherit; }
+.wiz-skip:hover { color: var(--text); }
+.wiz-note { padding: 8px 12px; border-radius: 10px; font-size: 12px; background: color-mix(in oklch, oklch(0.62 0.2 25) 14%, var(--card)); color: oklch(0.62 0.2 25); }
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes march { to { stroke-dashoffset: -28; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .app .flowline { animation: none; }
+  .app .livedot { animation: none; }
+}

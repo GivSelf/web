@@ -59,8 +59,8 @@ function ArrowRight() {
   return <svg viewBox="0 0 20 20" className="w-5 h-5" fill="currentColor"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" /></svg>;
 }
 
-const btnClass = "p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400";
-const inputClass = "px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm";
+const btnClass = "iconbtn";
+const inputClass = "tinput";
 
 export function DateNavigator({ date, onDateChange, grouping, onGroupingChange }: Props) {
   const d = new Date(date + "T12:00:00");
@@ -111,7 +111,7 @@ export function DateNavigator({ date, onDateChange, grouping, onGroupingChange }
           ))}
         </select>
         <button onClick={() => onDateChange(stepDate(date, grouping, 1))} className={btnClass}><ArrowRight /></button>
-        <span className="text-sm text-gray-500 dark:text-gray-400 hidden sm:inline">
+        <span className="muted" style={{ fontSize: 13 }}>
           {getWeekLabel(date)}
         </span>
       </>
@@ -137,14 +137,11 @@ export function DateNavigator({ date, onDateChange, grouping, onGroupingChange }
     <div className="flex items-center gap-2 flex-wrap">
       {picker}
 
-      <button
-        onClick={() => onDateChange(today)}
-        className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium"
-      >
+      <button onClick={() => onDateChange(today)} className="tbtn accent sm">
         Today
       </button>
 
-      <div className="ml-auto">
+      <div style={{ marginLeft: "auto" }}>
         <select
           value={grouping}
           onChange={(e) => onGroupingChange(e.target.value)}

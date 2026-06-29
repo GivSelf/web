@@ -69,17 +69,17 @@ export function EnergyPieChart({ summary, perspective }: Props) {
 
       {/* Center total */}
       <div className="-mt-[165px] mb-[115px] text-center pointer-events-none">
-        <p className="text-2xl font-bold">{total.toFixed(1)}</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400">kWh</p>
+        <p className="num" style={{ fontSize: 24, fontWeight: 800 }}>{total.toFixed(1)}</p>
+        <p className="subtle">kWh</p>
       </div>
 
       {/* Legend */}
       <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs mt-2">
         {entries.map((entry) => (
           <div key={entry.name} className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: entry.color }} />
-            <span className="text-gray-600 dark:text-gray-400">{entry.name}</span>
-            <span className="font-medium ml-auto">{entry.value.toFixed(1)}</span>
+            <span className="swatch" style={{ backgroundColor: entry.color }} />
+            <span className="muted">{entry.name}</span>
+            <span className="num" style={{ fontWeight: 600, marginLeft: "auto" }}>{entry.value.toFixed(1)}</span>
           </div>
         ))}
       </div>

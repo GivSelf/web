@@ -69,38 +69,29 @@ export function QuickstartWizard({ onComplete }: Props) {
   const currentStep = STEPS[step];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-lg mx-4 rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-2xl overflow-hidden">
+    <div className="wiz-overlay">
+      <div className="wiz-card">
         {/* Header */}
         <div className="px-6 pt-6 pb-4">
-          <h1 className="text-2xl font-bold">Welcome to GivSelf</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          <h1 className="wiz-h1">Welcome to GivSelf</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--muted)" }}>
             Let&apos;s get you set up. All steps are optional — you can configure these later in Settings.
           </p>
 
           {/* Step indicator */}
           <div className="flex gap-2 mt-4">
             {STEPS.map((s, i) => (
-              <div
-                key={s.key}
-                className={`h-1 flex-1 rounded-full ${
-                  i <= step ? "bg-blue-500" : "bg-gray-200 dark:bg-gray-800"
-                }`}
-              />
+              <div key={s.key} className={`wiz-step${i <= step ? " on" : ""}`} />
             ))}
           </div>
         </div>
 
         {/* Content */}
         <div className="px-6 pb-2">
-          <h2 className="text-lg font-semibold">{currentStep.title}</h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 mb-4">{currentStep.description}</p>
+          <h2 className="wiz-h2">{currentStep.title}</h2>
+          <p className="text-xs mt-1 mb-4" style={{ color: "var(--muted)" }}>{currentStep.description}</p>
 
-          {error && (
-            <div className="p-2 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-xs mb-4">
-              {error}
-            </div>
-          )}
+          {error && <div className="wiz-note" style={{ marginBottom: 16 }}>{error}</div>}
 
           {step === 0 && (
             <div className="space-y-3">
@@ -113,9 +104,9 @@ export function QuickstartWizard({ onComplete }: Props) {
             <div className="space-y-3">
               <Field label="GivEnergy API Key" value={geApiKey} onChange={setGeApiKey} placeholder="Bearer token from givenergy.cloud" password />
               <Field label="Inverter Serial" value={geInverterSerial} onChange={setGeInverterSerial} placeholder="e.g. FD1234G567" />
-              <p className="text-xs text-gray-400 dark:text-gray-500">
+              <p className="text-xs" style={{ color: "var(--muted)" }}>
                 Get your API key from{" "}
-                <a href="https://givenergy.cloud" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                <a href="https://givenergy.cloud" target="_blank" rel="noopener noreferrer" className="wiz-link">
                   givenergy.cloud
                 </a>
                 {" "}→ API Tokens
@@ -127,9 +118,9 @@ export function QuickstartWizard({ onComplete }: Props) {
             <div className="space-y-3">
               <Field label="Solcast API Key" value={solcastApiKey} onChange={setSolcastApiKey} placeholder="Your Solcast API key" password />
               <Field label="Solcast Site ID" value={solcastSiteId} onChange={setSolcastSiteId} placeholder="e.g. abcd-1234-ef56-7890" />
-              <p className="text-xs text-gray-400 dark:text-gray-500">
+              <p className="text-xs" style={{ color: "var(--muted)" }}>
                 Get your API key from{" "}
-                <a href="https://toolkit.solcast.com.au" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                <a href="https://toolkit.solcast.com.au" target="_blank" rel="noopener noreferrer" className="wiz-link">
                   toolkit.solcast.com.au
                 </a>
                 . Panel location will be auto-detected from your Solcast site.
@@ -139,19 +130,12 @@ export function QuickstartWizard({ onComplete }: Props) {
         </div>
 
         {/* Actions */}
-        <div className="flex justify-between items-center px-6 py-4 border-t border-gray-200 dark:border-gray-800">
-          <button
-            onClick={skip}
-            className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-          >
+        <div className="flex justify-between items-center px-6 py-4" style={{ borderTop: "1px solid var(--border)" }}>
+          <button onClick={skip} className="wiz-skip">
             {step === STEPS.length - 1 ? "Skip & Finish" : "Skip"}
           </button>
-          <button
-            onClick={saveAndNext}
-            disabled={saving}
-            className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50"
-          >
-            {saving ? "Saving..." : step === STEPS.length - 1 ? "Finish" : "Save & Continue"}
+          <button onClick={saveAndNext} disabled={saving} className="wiz-btn">
+            {saving ? "Saving…" : step === STEPS.length - 1 ? "Finish" : "Save & Continue"}
           </button>
         </div>
       </div>
@@ -168,13 +152,13 @@ function Field({ label, value, onChange, placeholder, password }: {
 }) {
   return (
     <div>
-      <label className="text-xs text-gray-500 dark:text-gray-400">{label}</label>
+      <label className="wiz-label">{label}</label>
       <input
         type={password ? "password" : "text"}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+        className="wiz-input"
       />
     </div>
   );
