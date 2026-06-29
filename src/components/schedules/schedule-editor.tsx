@@ -191,7 +191,7 @@ export function ScheduleEditor() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 720, width: "100%" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, width: "100%" }}>
       {error && <div className="note err">{error}</div>}
 
       {/* Battery Mode */}
@@ -205,7 +205,8 @@ export function ScheduleEditor() {
         />
       </div>
 
-      {/* Charge Schedule */}
+      {/* Charge + Discharge — side by side on desktop, stacked on mobile */}
+      <div className="schedgrid">
       <SlotGroup
         title="Charge Schedule"
         type="charge"
@@ -234,6 +235,7 @@ export function ScheduleEditor() {
         onSave={saveSlot("discharge")}
         saving={saving}
       />
+      </div>
 
       {/* Battery Reserve & Target */}
       <div className="card" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
