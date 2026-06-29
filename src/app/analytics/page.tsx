@@ -26,7 +26,7 @@ export default function AnalyticsPage() {
     <AppShell connected={connected}>
       <div className="toolbar" style={{ justifyContent: "space-between" }}>
         <h1 className="h1">Analytics</h1>
-        <div className="seg" style={{ flex: "0 0 auto" }}>
+        <div className="seg perspseg">
           {PERSPECTIVES.map((p) => (
             <button
               key={p.key}

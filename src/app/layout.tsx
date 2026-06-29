@@ -8,9 +8,13 @@ import {
 import "./globals.css";
 
 // One display/UI face per theme + JetBrains Mono for numeric/metadata labels.
-const hanken = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken" });
-const space = Space_Grotesk({ subsets: ["latin"], variable: "--font-space" });
-const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage" });
+// Only one theme's UI font is active at a time, so don't preload them (preloading
+// all three means two are always "preloaded but unused" — a console warning and
+// wasted bytes). They load on demand when a theme is selected; `display: swap`
+// (next/font default) avoids invisible text. JetBrains is always used, so it preloads.
+const hanken = Hanken_Grotesk({ subsets: ["latin"], variable: "--font-hanken", preload: false });
+const space = Space_Grotesk({ subsets: ["latin"], variable: "--font-space", preload: false });
+const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage", preload: false });
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
 
 const fontVars = `${hanken.variable} ${space.variable} ${bricolage.variable} ${jetbrains.variable}`;

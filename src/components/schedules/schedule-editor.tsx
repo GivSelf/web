@@ -46,8 +46,8 @@ function SlotRow({
   const active = isSlotActive(slot);
 
   return (
-    <div className={`grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-3 items-end ${!active && index > 0 ? "opacity-50" : ""}`}>
-      <span className="subtle" style={{ paddingBottom: 8, width: 24, textAlign: "right" }}>{index + 1}</span>
+    <div className={`grid grid-cols-2 sm:grid-cols-[auto_1fr_1fr_1fr_auto] gap-3 items-end ${!active && index > 0 ? "opacity-50" : ""}`}>
+      <span className="subtle hidden sm:inline" style={{ paddingBottom: 8, width: 24, textAlign: "right" }}>{index + 1}</span>
       <div>
         {index === 0 && <label className={labelClass}>Start</label>}
         <input
@@ -77,7 +77,7 @@ function SlotRow({
           className={inputClass}
         />
       </div>
-      <button onClick={() => onSave(index)} disabled={saving} className="tbtn accent sm">
+      <button onClick={() => onSave(index)} disabled={saving} className="tbtn accent sm col-span-2 sm:col-span-1">
         Save
       </button>
     </div>
@@ -238,7 +238,7 @@ export function ScheduleEditor() {
       {/* Battery Reserve & Target */}
       <div className="card" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <h3 className="cardh" style={{ margin: 0 }}>Battery Limits</h3>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
             <label className="label">Reserve SOC (%)</label>
             <div className="flex items-center gap-3 mt-1">

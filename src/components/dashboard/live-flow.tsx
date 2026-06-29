@@ -36,7 +36,7 @@ export function LiveFlow({ power }: { power: LivePower | null }) {
       </div>
 
       <div className="flowstage">
-        <svg className="flowsvg" viewBox="0 0 520 330">
+        <svg className="flowsvg" viewBox="0 0 520 330" preserveAspectRatio="none">
           <path className="flowbase" d="M260 80 L260 150" />
           <path className="flowbase" d="M238 192 L122 258" />
           <path className="flowbase" d="M282 192 L398 258" />

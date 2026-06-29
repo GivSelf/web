@@ -149,9 +149,12 @@ body {
 .app .csub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
 
 .app .flowstage { position: relative; width: 100%; margin-top: 10px; }
-.app .flowsvg { display: block; width: 100%; height: auto; overflow: visible; }
-.app .flowbase { fill: none; stroke: var(--border); stroke-width: 3; }
-.app .flowline { fill: none; stroke: var(--solar); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1.5 8; animation: march 1s linear infinite; }
+/* min-height floors the diagram so the fixed-size nodes never overlap on narrow
+   cards; preserveAspectRatio="none" lets the connectors stretch to stay aligned
+   with the percentage-positioned nodes. */
+.app .flowsvg { display: block; width: 100%; height: auto; min-height: 330px; overflow: visible; }
+.app .flowbase { fill: none; stroke: var(--border); stroke-width: 3; vector-effect: non-scaling-stroke; }
+.app .flowline { fill: none; stroke: var(--solar); stroke-width: 3; stroke-linecap: round; stroke-dasharray: 1.5 8; animation: march 1s linear infinite; vector-effect: non-scaling-stroke; }
 .app .flowline.bat { stroke: var(--green); }
 .app .flowline.grd { stroke: var(--gridc); }
 .app .flowline.rev { animation-direction: reverse; }
@@ -252,7 +255,52 @@ body {
 @media (max-width: 900px) {
   .app .hero, .app .fcrow { grid-template-columns: 1fr; }
   .app .stats { grid-template-columns: repeat(2, 1fr); }
-  .app .nav { order: 3; width: 100%; justify-content: center; flex-wrap: wrap; }
+  /* Hide the top-bar pills on mobile — the bottom tab bar takes over */
+  .app .nav { display: none; }
+  /* Leave room for the fixed bottom nav so content isn't hidden behind it */
+  .app { padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
+}
+
+/* Mobile bottom tab bar (hidden on desktop) */
+.bottomnav { display: none; }
+@media (max-width: 900px) {
+  .bottomnav {
+    display: flex;
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 40;
+    gap: 4px;
+    padding: 7px 8px calc(7px + env(safe-area-inset-bottom));
+    background: color-mix(in oklch, var(--card) 90%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border);
+  }
+  .bni {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 0;
+    border-radius: 12px;
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 10.5px;
+    font-weight: 600;
+  }
+  .bni svg { width: 22px; height: 22px; }
+  .bni.active { color: var(--text); background: color-mix(in oklch, var(--text) 7%, transparent); }
+  .bni.active svg { color: var(--solar); }
+}
+
+/* Phones: smaller flow nodes so they fit the narrow stage without overflow */
+@media (max-width: 480px) {
+  .app .flowsvg { min-height: 300px; }
+  .app .node { width: 84px; gap: 6px; }
+  .app .ndot { width: 54px; height: 54px; font-size: 15px; border-radius: 16px; }
+  .app .nlabel { font-size: 12px; }
+  .app .nsub { font-size: 10px; }
 }
 
 /* --- Shared themed primitives for the inner pages (Analytics/Schedule/Settings) --- */
@@ -311,6 +359,12 @@ body {
 
 @media (max-width: 900px) {
   .app .anlgrid { grid-template-columns: 1fr !important; }
+}
+
+/* Analytics perspective control: fixed beside the title, full-width on phones */
+.app .perspseg { flex: 0 0 auto; }
+@media (max-width: 560px) {
+  .app .perspseg { width: 100%; }
 }
 
 /* First-run wizard modal — rendered outside .app, themed via the html-level vars */

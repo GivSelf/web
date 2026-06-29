@@ -1,6 +1,7 @@
 "use client";
 
 import { TopBar } from "@/components/dashboard/top-bar";
+import { BottomNav } from "@/components/layout/bottom-nav";
 
 /**
  * Shared themed page chrome: full-bleed themed background → centered .app card
@@ -21,6 +22,7 @@ export function AppShell({
         <TopBar connected={connected} />
         {children}
       </div>
+      <BottomNav />
     </div>
   );
 }
