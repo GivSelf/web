@@ -58,12 +58,12 @@ const PERSPECTIVES: Record<string, FlowKey[]> = {
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string; dataKey?: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-3 shadow-lg text-sm">
-      <p className="text-gray-500 dark:text-gray-400 mb-1">{label}</p>
+    <div className="charttip">
+      <p className="muted" style={{ marginBottom: 4 }}>{label}</p>
       {payload.filter(e => e.value > 0).map((entry) => (
         <div key={entry.name} className="flex justify-between gap-4">
           <span style={{ color: entry.color }}>{entry.name}</span>
-          <span className="font-medium">
+          <span className="num" style={{ fontWeight: 600, marginLeft: 16 }}>
             {entry.dataKey === "forecastKwh"
               ? `${entry.value.toFixed(2)} kW (forecast)`
               : `${entry.value.toFixed(2)} kWh`}

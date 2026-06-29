@@ -21,7 +21,8 @@ interface ScheduleState {
 }
 
 const EMPTY_SLOT: TimeSlot = { start: "00:00", end: "00:00", targetSoc: 100 };
-const inputClass = "w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm";
+const inputClass = "tinput full";
+const labelClass = "label";
 
 function isSlotActive(slot: TimeSlot): boolean {
   return slot.start !== "00:00" || slot.end !== "00:00";
@@ -45,10 +46,10 @@ function SlotRow({
   const active = isSlotActive(slot);
 
   return (
-    <div className={`grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-3 items-end ${!active && index > 0 ? "opacity-50" : ""}`}>
-      <span className="text-xs text-gray-400 dark:text-gray-500 pb-2 w-6 text-right">{index + 1}</span>
+    <div className={`grid grid-cols-2 sm:grid-cols-[auto_1fr_1fr_1fr_auto] gap-3 items-end ${!active && index > 0 ? "opacity-50" : ""}`}>
+      <span className="subtle hidden sm:inline" style={{ paddingBottom: 8, width: 24, textAlign: "right" }}>{index + 1}</span>
       <div>
-        {index === 0 && <label className="text-xs text-gray-500 dark:text-gray-400">Start</label>}
+        {index === 0 && <label className={labelClass}>Start</label>}
         <input
           type="time"
           value={slot.start}
@@ -57,7 +58,7 @@ function SlotRow({
         />
       </div>
       <div>
-        {index === 0 && <label className="text-xs text-gray-500 dark:text-gray-400">End</label>}
+        {index === 0 && <label className={labelClass}>End</label>}
         <input
           type="time"
           value={slot.end}
@@ -66,7 +67,7 @@ function SlotRow({
         />
       </div>
       <div>
-        {index === 0 && <label className="text-xs text-gray-500 dark:text-gray-400">Target SOC</label>}
+        {index === 0 && <label className={labelClass}>Target SOC</label>}
         <input
           type="number"
           min={4}
@@ -76,11 +77,7 @@ function SlotRow({
           className={inputClass}
         />
       </div>
-      <button
-        onClick={() => onSave(index)}
-        disabled={saving}
-        className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium disabled:opacity-50"
-      >
+      <button onClick={() => onSave(index)} disabled={saving} className="tbtn accent sm col-span-2 sm:col-span-1">
         Save
       </button>
     </div>
@@ -112,17 +109,12 @@ function SlotGroup({
   const hiddenCount = slots.length - 1;
 
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-6 space-y-4">
+    <div className="card" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold">{title}</h3>
+        <h3 className="cardh" style={{ margin: 0 }}>{title}</h3>
         <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={enabled}
-            onChange={(e) => onToggle(e.target.checked)}
-            className="rounded"
-          />
-          <span className="text-sm">Enabled</span>
+          <input type="checkbox" checked={enabled} onChange={(e) => onToggle(e.target.checked)} />
+          <span style={{ fontSize: 13 }}>Enabled</span>
         </label>
       </div>
 
@@ -141,10 +133,7 @@ function SlotGroup({
       </div>
 
       {hiddenCount > 0 && (
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="text-sm text-blue-500 hover:text-blue-400"
-        >
+        <button onClick={() => setExpanded(!expanded)} className="linkbtn" style={{ textAlign: "left" }}>
           {expanded
             ? "Hide additional slots"
             : `Show ${hiddenCount} other slot${hiddenCount > 1 ? "s" : ""} (${activeCount > 1 ? activeCount - 1 : 0} active)`}
@@ -169,7 +158,7 @@ export function ScheduleEditor() {
   }, []);
 
   if (!schedule) {
-    return <p className="text-gray-500 dark:text-gray-400">Loading schedules...</p>;
+    return <p className="muted">Loading schedules…</p>;
   }
 
   const save = async (fn: () => Promise<unknown>) => {
@@ -202,15 +191,11 @@ export function ScheduleEditor() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      {error && (
-        <div className="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm">
-          {error}
-        </div>
-      )}
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, width: "100%" }}>
+      {error && <div className="note err">{error}</div>}
 
       {/* Battery Mode */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-6">
+      <div className="card">
         <ModeSelector
           value={schedule.batteryMode}
           onChange={(mode) => {
@@ -220,7 +205,8 @@ export function ScheduleEditor() {
         />
       </div>
 
-      {/* Charge Schedule */}
+      {/* Charge + Discharge — side by side on desktop, stacked on mobile */}
+      <div className="schedgrid">
       <SlotGroup
         title="Charge Schedule"
         type="charge"
@@ -249,13 +235,14 @@ export function ScheduleEditor() {
         onSave={saveSlot("discharge")}
         saving={saving}
       />
+      </div>
 
       {/* Battery Reserve & Target */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-6 space-y-4">
-        <h3 className="font-semibold">Battery Limits</h3>
-        <div className="grid grid-cols-2 gap-6">
+      <div className="card" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <h3 className="cardh" style={{ margin: 0 }}>Battery Limits</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400">Reserve SOC (%)</label>
+            <label className="label">Reserve SOC (%)</label>
             <div className="flex items-center gap-3 mt-1">
               <input
                 type="range"
@@ -263,20 +250,21 @@ export function ScheduleEditor() {
                 max={100}
                 value={schedule.batteryReserveSoc}
                 onChange={(e) => setSchedule({ ...schedule, batteryReserveSoc: parseInt(e.target.value) })}
-                className="flex-1"
+                className="slider grow"
               />
-              <span className="text-sm font-medium w-10 text-right">{schedule.batteryReserveSoc}%</span>
+              <span className="num" style={{ fontWeight: 700, width: 40, textAlign: "right" }}>{schedule.batteryReserveSoc}%</span>
             </div>
             <button
               onClick={() => save(() => apiPost("/api/control/reserve", { socPercent: schedule.batteryReserveSoc }))}
               disabled={saving}
-              className="mt-2 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium disabled:opacity-50"
+              className="tbtn accent sm"
+              style={{ marginTop: 10 }}
             >
               Set Reserve
             </button>
           </div>
           <div>
-            <label className="text-xs text-gray-500 dark:text-gray-400">Charge Target SOC (%)</label>
+            <label className="label">Charge Target SOC (%)</label>
             <div className="flex items-center gap-3 mt-1">
               <input
                 type="range"
@@ -284,14 +272,15 @@ export function ScheduleEditor() {
                 max={100}
                 value={schedule.chargeTargetSoc}
                 onChange={(e) => setSchedule({ ...schedule, chargeTargetSoc: parseInt(e.target.value) })}
-                className="flex-1"
+                className="slider grow"
               />
-              <span className="text-sm font-medium w-10 text-right">{schedule.chargeTargetSoc}%</span>
+              <span className="num" style={{ fontWeight: 700, width: 40, textAlign: "right" }}>{schedule.chargeTargetSoc}%</span>
             </div>
             <button
               onClick={() => save(() => apiPost("/api/control/target", { socPercent: schedule.chargeTargetSoc }))}
               disabled={saving}
-              className="mt-2 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium disabled:opacity-50"
+              className="tbtn accent sm"
+              style={{ marginTop: 10 }}
             >
               Set Target
             </button>

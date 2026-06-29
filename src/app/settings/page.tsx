@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sidebar } from "@/components/layout/sidebar";
-import { Header } from "@/components/layout/header";
-import { useLiveData, type ImportStatus } from "@/hooks/use-live-data";
+import { AppShell } from "@/components/layout/app-shell";
+import { useLiveData } from "@/hooks/use-live-data";
 import { apiFetch, apiPost } from "@/lib/api-client";
 
 function getLocal(key: string): string {
@@ -30,9 +29,9 @@ interface DeviceInfo {
 
 function InfoRow({ label, value }: { label: string; value: string | number | undefined }) {
   return (
-    <div className="flex justify-between py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
-      <span className="text-sm text-gray-500 dark:text-gray-400">{label}</span>
-      <span className="text-sm font-medium">{value || "—"}</span>
+    <div className="srow divider" style={{ borderTop: "none", borderBottom: "1px solid var(--border)" }}>
+      <span className="muted">{label}</span>
+      <span style={{ fontWeight: 600 }}>{value || "—"}</span>
     </div>
   );
 }
@@ -44,10 +43,10 @@ function formatDate(iso: string): string {
 
 function SettingsCard({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-6">
-      <h2 className="text-lg font-semibold mb-1">{title}</h2>
-      {description && <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">{description}</p>}
-      {!description && <div className="mb-4" />}
+    <div className="card">
+      <h2 className="cardh">{title}</h2>
+      {description && <p className="subtle" style={{ marginBottom: 16 }}>{description}</p>}
+      {!description && <div style={{ marginBottom: 16 }} />}
       {children}
     </div>
   );
@@ -58,14 +57,15 @@ function Field({ label, value, onChange, placeholder, password, readOnly }: {
 }) {
   return (
     <div>
-      <label className="text-xs text-gray-500 dark:text-gray-400">{label}</label>
+      <label className="label">{label}</label>
       <input
         type={password ? "password" : "text"}
         value={value}
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
         readOnly={readOnly}
         placeholder={placeholder}
-        className={`w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm ${readOnly ? "opacity-60" : ""}`}
+        className="tinput full"
+        style={{ marginTop: 4 }}
       />
     </div>
   );
@@ -73,11 +73,11 @@ function Field({ label, value, onChange, placeholder, password, readOnly }: {
 
 function SaveButton({ onClick, saving, saved }: { onClick: () => void; saving: boolean; saved: boolean }) {
   return (
-    <div className="flex items-center gap-3 mt-3">
-      <button onClick={onClick} disabled={saving} className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50">
-        {saving ? "Saving..." : "Save"}
+    <div className="flex items-center gap-3" style={{ marginTop: 12 }}>
+      <button onClick={onClick} disabled={saving} className="tbtn accent">
+        {saving ? "Saving…" : "Save"}
       </button>
-      {saved && <span className="text-xs text-green-500">Saved</span>}
+      {saved && <span className="subtle" style={{ color: "var(--green)" }}>Saved</span>}
     </div>
   );
 }
@@ -146,13 +146,9 @@ export default function SettingsPage() {
   const importProgress = importStatus?.daysTotal ? Math.round((importStatus.daysCompleted / importStatus.daysTotal) * 100) : 0;
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header connected={connected} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
-          <div className="max-w-2xl mx-auto space-y-6">
-            <h1 className="text-2xl font-bold">Settings</h1>
+    <AppShell connected={connected}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 720, width: "100%", alignSelf: "center" }}>
+            <h1 className="h1">Settings</h1>
 
             {/* Inverter Connection */}
             <SettingsCard title="Inverter Connection" description="Connect to your GivEnergy inverter via Modbus TCP on the local network.">
@@ -171,8 +167,8 @@ export default function SettingsPage() {
               <div className="space-y-3">
                 <Field label="API Key" value={geApiKey} onChange={setGeApiKey} placeholder="Bearer token from givenergy.cloud" password />
                 <Field label="Inverter Serial" value={geInverterSerial} onChange={setGeInverterSerial} placeholder="e.g. FD1234G567" />
-                <p className="text-xs text-gray-400 dark:text-gray-500">
-                  Get your API key from <a href="https://givenergy.cloud" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">givenergy.cloud</a> → API Tokens
+                <p className="subtle">
+                  Get your API key from <a href="https://givenergy.cloud" target="_blank" rel="noopener noreferrer" className="link">givenergy.cloud</a> → API Tokens
                 </p>
                 <SaveButton
                   onClick={() => saveSection("givenergy", {
@@ -197,8 +193,8 @@ export default function SettingsPage() {
                     <Field label="Azimuth" value={settings.forecast_azimuth ? `${settings.forecast_azimuth}°` : ""} readOnly />
                   </div>
                 )}
-                <p className="text-xs text-gray-400 dark:text-gray-500">
-                  Free tier: 10 API calls/day. Get your key from <a href="https://toolkit.solcast.com.au" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">toolkit.solcast.com.au</a>.
+                <p className="subtle">
+                  Free tier: 10 API calls/day. Get your key from <a href="https://toolkit.solcast.com.au" target="_blank" rel="noopener noreferrer" className="link">toolkit.solcast.com.au</a>.
                   Forecast.Solar also runs automatically — no config needed.
                 </p>
                 <SaveButton
@@ -214,48 +210,45 @@ export default function SettingsPage() {
             {/* Data Import */}
             <SettingsCard title="Data Import" description="Import historical energy flow data from the GivEnergy Cloud API into the local database.">
               {importStatus?.running ? (
-                <div className="space-y-3">
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">Importing {importStatus.currentDate}...</span>
-                    <span className="font-medium">{importStatus.daysCompleted} / {importStatus.daysTotal} days</span>
+                    <span className="muted">Importing {importStatus.currentDate}…</span>
+                    <span style={{ fontWeight: 600 }}>{importStatus.daysCompleted} / {importStatus.daysTotal} days</span>
                   </div>
-                  <div className="h-3 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
-                    <div className="h-full rounded-full bg-blue-500 transition-all duration-500" style={{ width: `${importProgress}%` }} />
+                  <div className="progress">
+                    <span style={{ width: `${importProgress}%` }} />
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{importStatus.barsImported.toLocaleString()} records imported</p>
+                  <p className="subtle">{importStatus.barsImported.toLocaleString()} records imported</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {importStatus && !importStatus.running && importStatus.daysCompleted > 0 && (
-                    <div className="p-2 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs">
+                    <div className="note ok">
                       Last import: {importStatus.barsImported.toLocaleString()} records across {importStatus.daysCompleted} days
                     </div>
                   )}
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={importFull} onChange={(e) => setImportFull(e.target.checked)} className="rounded" />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Full history (since commission {commissionDate})</span>
+                    <input type="checkbox" checked={importFull} onChange={(e) => setImportFull(e.target.checked)} />
+                    <span className="muted" style={{ fontSize: 13 }}>Full history (since commission {commissionDate})</span>
                   </label>
                   {!importFull && (
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-xs text-gray-500 dark:text-gray-400">From</label>
-                        <input type="date" value={importFrom} onChange={(e) => setImportFrom(e.target.value)}
-                          className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm" />
+                        <label className="label">From</label>
+                        <input type="date" value={importFrom} onChange={(e) => setImportFrom(e.target.value)} className="tinput full" style={{ marginTop: 4 }} />
                       </div>
                       <div>
-                        <label className="text-xs text-gray-500 dark:text-gray-400">To</label>
-                        <input type="date" value={importTo} onChange={(e) => setImportTo(e.target.value)}
-                          className="w-full mt-1 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm" />
+                        <label className="label">To</label>
+                        <input type="date" value={importTo} onChange={(e) => setImportTo(e.target.value)} className="tinput full" style={{ marginTop: 4 }} />
                       </div>
                     </div>
                   )}
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={importClear} onChange={(e) => setImportClear(e.target.checked)} className="rounded" />
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Clear existing data before import</span>
+                    <input type="checkbox" checked={importClear} onChange={(e) => setImportClear(e.target.checked)} />
+                    <span className="muted" style={{ fontSize: 13 }}>Clear existing data before import</span>
                   </label>
-                  <button onClick={startImport} disabled={!!saving.import}
-                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium disabled:opacity-50">
-                    {saving.import ? "Starting..." : "Start Import"}
+                  <button onClick={startImport} disabled={!!saving.import} className="tbtn accent" style={{ alignSelf: "flex-start" }}>
+                    {saving.import ? "Starting…" : "Start Import"}
                   </button>
                 </div>
               )}
@@ -285,13 +278,11 @@ export default function SettingsPage() {
             <SettingsCard title="About">
               <InfoRow label="Version" value="0.1.0" />
               <InfoRow label="Project" value="GivSelf" />
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-4">
+              <p className="subtle" style={{ marginTop: 16 }}>
                 Self-hosted home energy management system. Replaces cloud-dependent portals with direct local communication to your inverter.
               </p>
             </SettingsCard>
-          </div>
-        </main>
       </div>
-    </div>
+    </AppShell>
   );
 }
