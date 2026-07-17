@@ -55,7 +55,7 @@ const PERSPECTIVES: Record<string, FlowKey[]> = {
   all: Object.keys(FLOW_DEFS) as FlowKey[],
 };
 
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string; dataKey?: string }>; label?: string }) {
+function CustomTooltip({ active, payload, label, unit = "kWh" }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string; dataKey?: string }>; label?: string; unit?: string }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="charttip">
@@ -64,9 +64,9 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
         <div key={entry.name} className="flex justify-between gap-4">
           <span style={{ color: entry.color }}>{entry.name}</span>
           <span className="num" style={{ fontWeight: 600, marginLeft: 16 }}>
-            {entry.dataKey === "forecastKwh"
+            {entry.dataKey === "forecastKw"
               ? `${entry.value.toFixed(2)} kW (forecast)`
-              : `${entry.value.toFixed(2)} kWh`}
+              : `${entry.value.toFixed(2)} ${unit}`}
           </span>
         </div>
       ))}
@@ -108,39 +108,43 @@ export function EnergyFlowsChart({ data, perspective, grouping, forecast = [] }:
   const forecastMap = buildForecastMap(forecast);
   const hasForecast = forecast.length > 0 && grouping === "half-hourly";
 
-  // Build data points from actual bars
+  // Half-hourly shows average POWER (kW), like the GivEnergy app: a 30-min bucket
+  // holding X kWh averaged over 0.5 h is 2·X kW. Daily/monthly stay kWh totals
+  // (an average power over a whole day/month wouldn't be meaningful here).
+  const isPower = grouping === "half-hourly";
+  const scale = isPower ? 2 : 1;
+  const unit = isPower ? "kW" : "kWh";
+  const scaleBar = (d: FlowBar) => ({
+    pvToHome: d.pvToHome * scale,
+    pvToBattery: d.pvToBattery * scale,
+    pvToGrid: d.pvToGrid * scale,
+    gridToHome: d.gridToHome * scale,
+    gridToBattery: d.gridToBattery * scale,
+    batteryToHome: d.batteryToHome * scale,
+    batteryToGrid: d.batteryToGrid * scale,
+  });
+
+  // Build data points from actual bars. The forecast series is already in kW and
+  // only overlays the half-hourly (kW) view, so it's plotted as-is (no /2).
   const formatted = data.map((d) => {
     const label = formatTime(d.start, grouping);
-    const hhmm = barToHHMM(d.start);
-    const forecastKw = hasForecast ? (forecastMap.get(hhmm) ?? null) : null;
-    return {
-      ...d,
-      label,
-      forecastKwh: forecastKw !== null ? forecastKw / 2 : null,
-    };
+    const forecastKw = hasForecast ? (forecastMap.get(barToHHMM(d.start)) ?? null) : null;
+    return { start: d.start, end: d.end, label, ...scaleBar(d), forecastKw };
   });
 
   // Pad to full 48 half-hour slots if half-hourly and we have forecast data
   if (hasForecast && grouping === "half-hourly" && formatted.length < 48) {
     const existingLabels = new Set(formatted.map((f) => f.label));
+    const zeroBar = scaleBar({ start: "", end: "", pvToHome: 0, pvToBattery: 0, pvToGrid: 0, gridToHome: 0, gridToBattery: 0, batteryToHome: 0, batteryToGrid: 0 });
     for (let i = 0; i < 48; i++) {
       const hh = Math.floor(i / 2).toString().padStart(2, "0");
       const mm = (i % 2) * 30 === 0 ? "00" : "30";
       const label = `${hh}:${mm}`;
       if (!existingLabels.has(label)) {
-        const hhmm = `${hh}:${mm}`;
-        const forecastKw = forecastMap.get(hhmm) ?? null;
-        formatted.push({
-          start: "", end: "",
-          pvToHome: 0, pvToBattery: 0, pvToGrid: 0,
-          gridToHome: 0, gridToBattery: 0,
-          batteryToHome: 0, batteryToGrid: 0,
-          label,
-          forecastKwh: forecastKw !== null ? forecastKw / 2 : null,
-        });
+        const forecastKw = forecastMap.get(`${hh}:${mm}`) ?? null;
+        formatted.push({ start: "", end: "", label, ...zeroBar, forecastKw });
       }
     }
-    // Sort by label to maintain time order
     formatted.sort((a, b) => a.label.localeCompare(b.label));
   }
 
@@ -161,9 +165,9 @@ export function EnergyFlowsChart({ data, perspective, grouping, forecast = [] }:
           axisLine={false}
           tickFormatter={(v: number) => `${v.toFixed(1)}`}
           width={50}
-          label={{ value: "kWh", angle: -90, position: "insideLeft", style: { fill: "var(--chart-axis)", fontSize: 12 } }}
+          label={{ value: unit, angle: -90, position: "insideLeft", style: { fill: "var(--chart-axis)", fontSize: 12 } }}
         />
-        <Tooltip content={<CustomTooltip />} />
+        <Tooltip content={<CustomTooltip unit={unit} />} />
         <Legend wrapperStyle={{ fontSize: 11, paddingTop: 12 }} />
         {visibleFlows.map((key) => (
           <Bar
@@ -176,7 +180,7 @@ export function EnergyFlowsChart({ data, perspective, grouping, forecast = [] }:
         ))}
         {hasForecast && (
           <Line
-            dataKey="forecastKwh"
+            dataKey="forecastKw"
             name="Solar Forecast"
             type="monotone"
             stroke="#FBBF24"
