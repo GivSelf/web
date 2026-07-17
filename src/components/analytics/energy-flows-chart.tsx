@@ -64,8 +64,8 @@ function CustomTooltip({ active, payload, label, unit = "kWh" }: { active?: bool
         <div key={entry.name} className="flex justify-between gap-4">
           <span style={{ color: entry.color }}>{entry.name}</span>
           <span className="num" style={{ fontWeight: 600, marginLeft: 16 }}>
-            {entry.dataKey === "forecastKw"
-              ? `${entry.value.toFixed(2)} kW (forecast)`
+            {entry.dataKey?.startsWith("fc")
+              ? `${entry.value.toFixed(2)} kW`
               : `${entry.value.toFixed(2)} ${unit}`}
           </span>
         </div>
@@ -74,20 +74,23 @@ function CustomTooltip({ active, payload, label, unit = "kWh" }: { active?: bool
   );
 }
 
-/** Build a forecast lookup map: HH:MM → kWh value */
-function buildForecastMap(forecast: ForecastPoint[]): Map<string, number> {
+// One line per forecast source. Preferred order + colours; unknown sources fall
+// back to a neutral grey.
+const FORECAST_SOURCES: Record<string, { name: string; color: string }> = {
+  solcast: { name: "Solcast", color: "#F59E0B" },
+  "forecast.solar": { name: "Forecast.Solar", color: "#8B5CF6" },
+};
+const SOURCE_ORDER = ["solcast", "forecast.solar"];
+const sourceMeta = (src: string) => FORECAST_SOURCES[src] ?? { name: src, color: "#9CA3AF" };
+
+/** Map HH:MM → kW for a single source's points (no cross-slot fill; gaps are
+ *  bridged by the line's connectNulls). */
+function buildForecastMap(points: ForecastPoint[]): Map<string, number> {
   const map = new Map<string, number>();
-  for (const f of forecast) {
-    // Extract HH:MM directly from string — no Date parsing needed
-    // Forecast: "2026-04-09 08:00:00+00" → "08:00"
-    // Both forecast and bars use the same local hour in the string
+  for (const f of points) {
     const spaceIdx = f.periodEnd.indexOf(" ");
     if (spaceIdx < 0) continue;
-    const hhmm = f.periodEnd.slice(spaceIdx + 1, spaceIdx + 6);
-    map.set(hhmm, f.pvEstimateKw);
-    if (hhmm.endsWith(":00")) {
-      map.set(hhmm.replace(":00", ":30"), f.pvEstimateKw);
-    }
+    map.set(f.periodEnd.slice(spaceIdx + 1, spaceIdx + 6), f.pvEstimateKw);
   }
   return map;
 }
@@ -103,10 +106,20 @@ function barToHHMM(startTime: string): string {
   return startTime.slice(0, 5);
 }
 
+type Row = Record<string, string | number | null>;
+
 export function EnergyFlowsChart({ data, perspective, grouping, forecast = [] }: Props) {
   const visibleFlows = PERSPECTIVES[perspective] || PERSPECTIVES.home;
-  const forecastMap = buildForecastMap(forecast);
   const hasForecast = forecast.length > 0 && grouping === "half-hourly";
+
+  // One series per source, so the two providers draw separate lines instead of
+  // interleaving slot-by-slot into a zig-zag. Preferred order first.
+  const sources = hasForecast
+    ? Array.from(new Set(forecast.map((f) => f.source))).sort(
+        (a, b) => ((SOURCE_ORDER.indexOf(a) + 1) || 99) - ((SOURCE_ORDER.indexOf(b) + 1) || 99),
+      )
+    : [];
+  const sourceMaps = sources.map((src) => buildForecastMap(forecast.filter((f) => f.source === src)));
 
   // Half-hourly shows average POWER (kW), like the GivEnergy app: a 30-min bucket
   // holding X kWh averaged over 0.5 h is 2·X kW. Daily/monthly stay kWh totals
@@ -123,14 +136,17 @@ export function EnergyFlowsChart({ data, perspective, grouping, forecast = [] }:
     batteryToHome: d.batteryToHome * scale,
     batteryToGrid: d.batteryToGrid * scale,
   });
+  // Forecast values are already in kW and only overlay the half-hourly (kW) view.
+  const forecastAt = (hhmm: string): Row => {
+    const row: Row = {};
+    sourceMaps.forEach((m, i) => { row[`fc${i}`] = m.get(hhmm) ?? null; });
+    return row;
+  };
 
-  // Build data points from actual bars. The forecast series is already in kW and
-  // only overlays the half-hourly (kW) view, so it's plotted as-is (no /2).
-  const formatted = data.map((d) => {
-    const label = formatTime(d.start, grouping);
-    const forecastKw = hasForecast ? (forecastMap.get(barToHHMM(d.start)) ?? null) : null;
-    return { start: d.start, end: d.end, label, ...scaleBar(d), forecastKw };
-  });
+  const formatted: Row[] = data.map((d) => ({
+    start: d.start, end: d.end, label: formatTime(d.start, grouping),
+    ...scaleBar(d), ...forecastAt(barToHHMM(d.start)),
+  }));
 
   // Pad to full 48 half-hour slots if half-hourly and we have forecast data
   if (hasForecast && grouping === "half-hourly" && formatted.length < 48) {
@@ -141,11 +157,10 @@ export function EnergyFlowsChart({ data, perspective, grouping, forecast = [] }:
       const mm = (i % 2) * 30 === 0 ? "00" : "30";
       const label = `${hh}:${mm}`;
       if (!existingLabels.has(label)) {
-        const forecastKw = forecastMap.get(`${hh}:${mm}`) ?? null;
-        formatted.push({ start: "", end: "", label, ...zeroBar, forecastKw });
+        formatted.push({ start: "", end: "", label, ...zeroBar, ...forecastAt(label) });
       }
     }
-    formatted.sort((a, b) => a.label.localeCompare(b.label));
+    formatted.sort((a, b) => String(a.label).localeCompare(String(b.label)));
   }
 
   return (
@@ -178,18 +193,19 @@ export function EnergyFlowsChart({ data, perspective, grouping, forecast = [] }:
             fill={FLOW_DEFS[key].color}
           />
         ))}
-        {hasForecast && (
+        {sources.map((src, i) => (
           <Line
-            dataKey="forecastKw"
-            name="Solar Forecast"
+            key={src}
+            dataKey={`fc${i}`}
+            name={`${sourceMeta(src).name} forecast`}
             type="monotone"
-            stroke="#FBBF24"
+            stroke={sourceMeta(src).color}
             strokeWidth={2}
             strokeDasharray="6 3"
             dot={false}
             connectNulls
           />
-        )}
+        ))}
       </ComposedChart>
     </ResponsiveContainer>
   );
