@@ -29,6 +29,7 @@ export interface FlowSummary {
 export interface ForecastPoint {
   periodEnd: string;
   pvEstimateKw: number;
+  source: string;
 }
 
 export function useEnergyFlows(date: string, grouping: string) {

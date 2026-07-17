@@ -29,8 +29,13 @@ export function ForecastCard({
   nowKw: number;
 }) {
   const v = useMemo(() => {
-    // Forecast series within the visible window.
+    // The API returns one series per source; this single curve uses the best
+    // available one (Solcast is site-specific), never a mix of the two.
+    const preferred = forecast.some((p) => p.source === "solcast")
+      ? "solcast"
+      : forecast[0]?.source;
     const fc = forecast
+      .filter((p) => p.source === preferred)
       .map((p) => ({ h: hourOf(p.periodEnd), kw: p.pvEstimateKw }))
       .filter((p) => p.h >= X0 && p.h <= X1)
       .sort((a, b) => a.h - b.h);
