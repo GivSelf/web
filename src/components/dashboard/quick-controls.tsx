@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiPost, apiPut } from "@/lib/api-client";
 import type { BoostState } from "@/hooks/use-live-data";
 import type { ScheduleState } from "@/hooks/use-dashboard";
@@ -25,11 +25,15 @@ export function QuickControls({
   const [reserve, setReserve] = useState<number>(schedules?.batteryReserveSoc ?? 20);
   const [busy, setBusy] = useState(false);
 
+  const commitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastCommitted = useRef<number | null>(null);
+
   // Keep local state in sync when server data (re)loads.
   useEffect(() => {
     if (schedules) {
       setMode(schedules.batteryMode);
       setReserve(schedules.batteryReserveSoc);
+      lastCommitted.current = schedules.batteryReserveSoc;
     }
   }, [schedules]);
 
@@ -59,13 +63,27 @@ export function QuickControls({
     setBusy(false);
   };
 
+  // Each commit becomes a Modbus holding-register write on the inverter, so
+  // only send when the value actually changed, and debounce keyboard input —
+  // a held arrow key fires keyup per step and must not become a write burst.
   const commitReserve = async (val: number) => {
+    if (commitTimer.current) {
+      clearTimeout(commitTimer.current);
+      commitTimer.current = null;
+    }
+    if (val === lastCommitted.current) return;
+    lastCommitted.current = val;
     try {
       await apiPost("/api/control/reserve", { socPercent: val });
       onChanged();
     } catch (err) {
       console.error("reserve failed", err);
     }
+  };
+
+  const commitReserveDebounced = (val: number) => {
+    if (commitTimer.current) clearTimeout(commitTimer.current);
+    commitTimer.current = setTimeout(() => commitReserve(val), 600);
   };
 
   const remaining = boostState?.remainingSeconds ?? 0;
@@ -125,7 +143,7 @@ export function QuickControls({
               }}
               onChange={(e) => setReserve(Number(e.target.value))}
               onPointerUp={() => commitReserve(reserve)}
-              onKeyUp={() => commitReserve(reserve)}
+              onKeyUp={() => commitReserveDebounced(reserve)}
             />
             <span className="resvv num">{reserve}%</span>
           </div>
